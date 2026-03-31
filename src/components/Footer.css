@@ -1,0 +1,8 @@
+.footer { padding:20px 28px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:rgba(11,11,15,.7);backdrop-filter:blur(16px);position:relative;z-index:1; }
+.f-logo { font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--txt); }
+.f-logo span { color:var(--acc); }
+.f-links { display:flex;gap:20px; }
+.f-link { font-size:12px;color:var(--mut);cursor:pointer;transition:color .2s; }
+.f-link:hover { color:var(--txt); }
+.f-credit { font-size:11px;color:var(--mut2); }
+@media(max-width:768px){ .footer{flex-direction:column;text-align:center;} .f-links{flex-wrap:wrap;justify-content:center;} }
