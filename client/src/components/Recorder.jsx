@@ -1,71 +1,121 @@
 import { useState, useRef } from "react";
-import axios from "axios";
 import { motion } from "framer-motion";
+import { uploadService, handleApiError } from "../services/api";
 
 export default function Recorder({ setResult }) {
   const [recording, setRecording] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("Ready to record");
+  const [error, setError] = useState("");
 
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    chunksRef.current = [];
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
 
-    mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
-    mediaRecorder.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      const formData = new FormData();
-      formData.append("file", blob, "recording.webm");
+      mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
 
-      try {
-        setLoading(true);
-        setStatus("AI is analyzing your meeting...");
-        const res = await axios.post("http://localhost:5000/upload", formData);
-        setResult(res.data);
-        setStatus("Analysis Complete");
-      } catch (err) {
-        setStatus("Connection failed. Check backend.");
-      } finally {
-        setLoading(false);
-      }
-    };
+        try {
+          setLoading(true);
+          setStatus("AI is analyzing your meeting...");
+          const response = await uploadService.uploadAudio(blob);
 
-    mediaRecorder.start();
-    setRecording(true);
-    setStatus("Listening...");
+          if (response.success) {
+            setResult(response);
+            setStatus("Analysis Complete");
+          }
+        } catch (err) {
+          const errorMessage = handleApiError(err);
+          setError(errorMessage);
+          setStatus("Error during analysis");
+          console.error("Upload error:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+      setStatus("Listening...");
+    } catch (err) {
+      setError("Microphone access denied. Please allow microphone access.");
+      setStatus("Microphone access required");
+      console.error("Media error:", err);
+    }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setRecording(false);
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
   };
 
   return (
     <div className="flex flex-col items-center gap-8">
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
+
+      {/* Recording Indicator */}
       <div className="relative">
         {recording && (
           <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
         )}
-        <div className={`h-24 w-24 rounded-full flex items-center justify-center border-2 transition-colors ${recording ? 'border-red-500 bg-red-500/10' : 'border-indigo-500/50 bg-indigo-500/5'}`}>
-          <div className={`h-4 w-4 rounded-full ${recording ? 'bg-red-500' : 'bg-indigo-500'}`} />
+        <div
+          className={`h-24 w-24 rounded-full flex items-center justify-center border-2 transition-colors ${
+            recording
+              ? "border-red-500 bg-red-500/10"
+              : "border-indigo-500/50 bg-indigo-500/5"
+          }`}
+        >
+          <div
+            className={`h-4 w-4 rounded-full ${recording ? "bg-red-500 animate-pulse" : "bg-indigo-500"}`}
+          />
         </div>
       </div>
 
+      {/* Status Text */}
       <p className="text-sm font-medium tracking-widest uppercase text-slate-500">
         {status}
       </p>
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.1 }}
+              className="h-2 w-2 bg-indigo-500 rounded-full"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Control Buttons */}
       <div className="flex gap-4">
         {!recording ? (
           <button
             onClick={startRecording}
             disabled={loading}
-            className="group relative px-8 py-3 bg-white text-black font-bold rounded-xl overflow-hidden hover:scale-105 transition-transform disabled:opacity-50"
+            className="group relative px-8 py-3 bg-white text-black font-bold rounded-xl overflow-hidden hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Start Session
           </button>
