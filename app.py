@@ -261,4 +261,9 @@ if __name__ == '__main__':
     print("  - POST /api/upload (protected)")
     print("  - GET /api/health (public)")
     print()
-    app.run(debug=True, port=5000)
+
+    # Get port from environment (Render ke liye important)
+    port = int(os.environ.get("PORT", 5000))
+
+    # Production-safe run
+    app.run(host="0.0.0.0", port=port)
