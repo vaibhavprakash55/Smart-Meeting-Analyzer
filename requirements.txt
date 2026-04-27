@@ -12,3 +12,4 @@ torch
 librosa
 soundfile
 tiktoken
+gunicorn==21.2.0
