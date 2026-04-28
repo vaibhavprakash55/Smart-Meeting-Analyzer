@@ -44,7 +44,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def health_check():
     try:
         db = get_db()
-        if db:
+        if db is not None:
             return jsonify({"status": "healthy"}), 200
         return jsonify({"status": "degraded"}), 200
     except Exception as e:
