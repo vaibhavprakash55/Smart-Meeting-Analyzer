@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from config import CORS_ORIGINS, get_db
 from routes.auth import auth_bp
 from utils.auth import token_required
+from config import CORS_ORIGINS, get_db, GROQ_API_KEY
 
 # ========================
 # LOAD ENV
