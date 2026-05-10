@@ -1,3 +1,6 @@
+# Live Demo Link
+https://smart-meeting-analyzer.vercel.app
+
 # 🎤 AI Meeting Summarizer - Complete Authentication System
 
 > A production-ready, full-stack application with secure user authentication, MongoDB integration, and AI-powered meeting transcription & summarization.
