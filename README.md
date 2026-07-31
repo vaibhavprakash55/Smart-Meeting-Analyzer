@@ -1,5 +1,5 @@
 # Live Demo Link
-smart-meeting-analyzer-8iyd.vercel.app
+https://smart-meeting-analyzer-8iyd.vercel.app
 
 # 🎤 AI Meeting Summarizer - Complete Authentication System
 
