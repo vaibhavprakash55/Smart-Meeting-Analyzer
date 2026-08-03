@@ -16,14 +16,16 @@ const Register = () => {
     setLoading(true);
 
     try {
-      if (authService?.register) {
-        await authService.register(name, email, password);
-      } else {
-        localStorage.setItem("user", JSON.stringify({ name, email }));
-      }
-      navigate("/");
+      // Pass single object matching api.js expectations
+      await authService.register({ name, email, password });
+      
+      // Auto login redirect after success
+      navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Try again.");
+      console.error("Registration Error:", err);
+      // Extracts backend Flask response message correctly
+      const backendError = err?.message || err?.error || "Registration failed. Try again.";
+      setError(backendError);
     } finally {
       setLoading(false);
     }
@@ -37,10 +39,9 @@ const Register = () => {
         <div className="absolute bottom-10 right-10 w-[450px] h-[450px] bg-emerald-500/15 rounded-full blur-[120px]" />
       </div>
 
-      {/* Expanded Container Width: max-w-5xl */}
       <div className="w-full max-w-5xl bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center shadow-2xl z-10">
         
-        {/* LEFT PANEL (7 cols) */}
+        {/* LEFT PANEL */}
         <div className="md:col-span-7 space-y-7">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
             <span>✨ Start Free Workspace</span>
@@ -68,7 +69,6 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Metric Highlight Card */}
           <div className="flex items-center gap-4 p-4 bg-slate-800/40 border border-white/10 rounded-xl backdrop-blur-md">
             <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 text-sm font-bold">🚀</div>
             <div>
@@ -78,14 +78,14 @@ const Register = () => {
           </div>
         </div>
 
-        {/* RIGHT PANEL (5 cols) - Scaled Spacing */}
+        {/* RIGHT PANEL */}
         <div className="md:col-span-5 bg-slate-800/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 sm:p-9 shadow-xl flex flex-col justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Create an account</h2>
             <p className="text-xs text-slate-400 mt-1 mb-6">Get started with your free workspace</p>
 
             {error && (
-              <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+              <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 font-medium">
                 {error}
               </div>
             )}
@@ -100,7 +100,7 @@ const Register = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Vaibhav Prakash"
+                  placeholder="Prakash Vaibhav"
                   className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 />
               </div>
@@ -114,7 +114,7 @@ const Register = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vaibhav@example.com"
+                  placeholder="vaibhav321@gmail.com"
                   className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 />
               </div>
