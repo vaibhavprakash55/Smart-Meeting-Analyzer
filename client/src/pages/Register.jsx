@@ -1,278 +1,157 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { authService, handleApiError } from "../services/api";
-import {
-  User,
-  Mail,
-  Lock,
-  AlertCircle,
-  Loader,
-  CheckCircle,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../services/api";
 
-/* Inject CSS once */
-const css = `
-:root {
-  --bg: #020617;
-  --surface: #0b1224;
-  --border: #1b2a4a;
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --error: #ef4444;
-  --success: #22c55e;
-}
-
-.r-root {
-  min-height: 100vh;
-  background: radial-gradient(circle at top, #0b1224, #020617);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: sans-serif;
-}
-
-.r-wrap {
-  width: 100%;
-  max-width: 420px;
-}
-
-.r-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 32px;
-  box-shadow:
-    0 0 40px rgba(79,70,229,.15),
-    0 24px 48px rgba(0,0,0,.6);
-}
-
-.r-heading {
-  font-size: 28px;
-  color: var(--text);
-}
-
-.r-sub {
-  color: var(--muted);
-  margin-bottom: 20px;
-}
-
-.r-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.r-input-wrap {
-  position: relative;
-}
-
-.r-input {
-  width: 100%;
-  padding: 12px 40px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #020617;
-  color: var(--text);
-}
-
-.r-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(79,70,229,.3);
-}
-
-.r-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-}
-
-.r-btn {
-  margin-top: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.r-error {
-  background: #2a0f0f;
-  color: var(--error);
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.r-success {
-  background: #052e16;
-  color: var(--success);
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.r-footer {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.r-footer a {
-  color: var(--primary-light);
-}
-`;
-
-let injected = false;
-function injectStyles() {
-  if (injected) return;
-  const s = document.createElement("style");
-  s.innerHTML = css;
-  document.head.appendChild(s);
-  injected = true;
-}
-
-export default function Register() {
-  injectStyles();
-
-  const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
+const Register = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
 
     try {
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
-        setLoading(false);
-        return;
+      if (authService?.register) {
+        await authService.register(name, email, password);
+      } else {
+        localStorage.setItem("user", JSON.stringify({ name, email }));
       }
-
-      const res = await authService.register(formData);
-
-      if (res.success) {
-        setSuccess("Account created! Redirecting...");
-        setTimeout(() => navigate("/login"), 1200);
-      }
+      navigate("/");
     } catch (err) {
-      setError(handleApiError(err));
+      setError(err.response?.data?.message || "Registration failed. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="r-root">
-      <div className="r-wrap">
-        <div className="r-card">
-          <h2 className="r-heading">Create Account</h2>
-          <p className="r-sub">Join IntelliMinutes</p>
+    <div className="min-h-screen bg-[#030712] text-slate-200 flex items-center justify-center p-4 relative overflow-hidden selection:bg-indigo-500/30">
+      {/* Background Glows */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-10 w-96 h-96 bg-indigo-600/15 rounded-full blur-[120px]" />
+        <div className="absolute bottom-10 right-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px]" />
+      </div>
 
-          {error && <div className="r-error">{error}</div>}
-          {success && <div className="r-success">{success}</div>}
+      {/* Main Split Container */}
+      <div className="w-full max-w-4xl bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center shadow-2xl z-10">
+        
+        {/* LEFT PANEL */}
+        <div className="space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+            <span>✨ Start Free Workspace</span>
+          </div>
 
-          <form onSubmit={handleSubmit} className="r-form">
-            <div className="r-input-wrap">
-              <User className="r-icon" size={16} />
+          <div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">IntelliMinutes</h1>
+            <p className="mt-2 text-slate-400 text-sm leading-relaxed">
+              Join top engineering teams turning spoken ideas into actionable sprint tasks instantly.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-slate-300 text-xs font-medium">Zero Setup Required &amp; Fast Audio Transcribe</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-slate-300 text-xs font-medium">Structured Executive Summaries &amp; Action Items</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-slate-300 text-xs font-medium">Local History Storage &amp; PDF Export Suite</span>
+            </div>
+          </div>
+
+          {/* Metric Highlight Card */}
+          <div className="flex items-center gap-3 p-3.5 bg-slate-800/40 border border-white/10 rounded-xl backdrop-blur-md">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 text-xs font-bold">🚀</div>
+            <div>
+              <div className="text-xs font-bold text-white">Enterprise Ready SaaS</div>
+              <div className="text-[10px] text-slate-400">Built with React, Tailwind &amp; Groq Llama-3</div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="bg-slate-800/60 backdrop-blur-2xl border border-white/10 rounded-xl p-6 sm:p-8 shadow-xl">
+          <h2 className="text-xl font-bold text-white">Create an account</h2>
+          <p className="text-xs text-slate-400 mt-1 mb-6">Get started with your free workspace</p>
+
+          {error && (
+            <div className="mb-4 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Full Name
+              </label>
               <input
                 type="text"
-                placeholder="Full Name"
-                className="r-input"
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Vaibhav Prakash"
+                className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
-            <div className="r-input-wrap">
-              <Mail className="r-icon" size={16} />
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Email Address
+              </label>
               <input
                 type="email"
-                placeholder="Email"
-                className="r-input"
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="vaibhav@example.com"
+                className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
-            <div className="r-input-wrap">
-              <Lock className="r-icon" size={16} />
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Password
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                className="r-input"
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  color: "#94a3b8",
-                }}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-
-            <div className="r-input-wrap">
-              <Lock className="r-icon" size={16} />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Confirm Password"
-                className="r-input"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    confirmPassword: e.target.value,
-                  })
-                }
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••••••"
+                className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
-            <button className="r-btn" disabled={loading}>
-              {loading ? (
-                <Loader className="animate-spin" size={16} />
-              ) : (
-                "Create Account"
-              )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all shadow-lg shadow-emerald-600/25 active:scale-[0.98]"
+            >
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
-          <div className="r-footer">
-            <p>
-              Already have an account?{" "}
-              <Link to="/login">Login</Link>
-            </p>
-          </div>
+          <p className="text-xs text-center text-slate-400 mt-8">
+            Already have an account?{" "}
+            <Link to="/login" className="text-indigo-400 font-semibold hover:underline">
+              Sign in
+            </Link>
+          </p>
         </div>
+
       </div>
     </div>
   );
-}
+};
+
+export default Register;

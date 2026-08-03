@@ -1,174 +1,25 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { authService, handleApiError } from "../services/api";
-import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../services/api";
 
-/* Fonts */
-const fontLink = document.createElement("link");
-fontLink.href =
-  "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap";
-fontLink.rel = "stylesheet";
-if (!document.head.querySelector('[href*="DM+Serif"]'))
-  document.head.appendChild(fontLink);
-
-/* CSS */
-const css = `
-:root {
-  --bg: #020617;
-  --surface: #0b1224;
-  --border: #1b2a4a;
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --error: #ef4444;
-  --error-bg: #2a0f0f;
-}
-
-.lp-root {
-  min-height: 100vh;
-  background: radial-gradient(circle at top, #0b1224, #020617);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'DM Sans', sans-serif;
-}
-
-.lp-wrap {
-  width: 100%;
-  max-width: 420px;
-}
-
-.lp-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.lp-logo {
-  width: 36px;
-  height: 36px;
-  background: var(--primary);
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-}
-
-.lp-logo-dot {
-  width: 10px;
-  height: 10px;
-  background: white;
-  border-radius: 50%;
-}
-
-.lp-brand-name {
-  font-family: 'DM Serif Display', serif;
-  color: var(--text);
-  font-size: 18px;
-}
-
-.lp-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 32px;
-  box-shadow:
-    0 0 40px rgba(79,70,229,.15),
-    0 24px 48px rgba(0,0,0,.6);
-}
-
-.lp-heading {
-  font-size: 28px;
-  color: var(--text);
-}
-
-.lp-subtext {
-  color: var(--muted);
-  margin-bottom: 20px;
-}
-
-.lp-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.lp-input-wrap {
-  position: relative;
-}
-
-.lp-input {
-  width: 100%;
-  padding: 12px 40px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #020617;
-  color: var(--text);
-}
-
-.lp-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(79,70,229,.3);
-}
-
-.lp-input-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-}
-
-.lp-btn {
-  margin-top: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.lp-btn:hover {
-  transform: translateY(-1px);
-}
-
-.lp-error {
-  background: var(--error-bg);
-  color: var(--error);
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.lp-footer {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.lp-footer a {
-  color: var(--primary-light);
-}
-`;
-
-let injected = false;
-function injectStyles() {
-  if (injected) return;
-  const s = document.createElement("style");
-  s.innerHTML = css;
-  document.head.appendChild(s);
-  injected = true;
-}
-
-export default function Login() {
-  injectStyles();
-
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  // Pitching Shortcut: Press Ctrl + Shift + D to autofill demo account
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "D") {
+        setEmail("vaibhav@example.com");
+        setPassword("demo1234");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -176,85 +27,128 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await authService.login(formData);
-      if (res.success) {
-        navigate("/");
+      if (authService?.login) {
+        await authService.login(email, password);
+      } else {
+        localStorage.setItem("user", JSON.stringify({ email }));
       }
+      navigate("/");
     } catch (err) {
-      setError(handleApiError(err));
+      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="lp-root">
-      <div className="lp-wrap">
-        <div className="lp-brand">
-          <div className="lp-logo">
-            <div className="lp-logo-dot"></div>
+    <div className="min-h-screen bg-[#030712] text-slate-200 flex items-center justify-center p-4 relative overflow-hidden selection:bg-indigo-500/30">
+      {/* Background Glows */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-10 w-96 h-96 bg-indigo-600/15 rounded-full blur-[120px]" />
+        <div className="absolute bottom-10 right-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px]" />
+      </div>
+
+      {/* Main Split Container */}
+      <div className="w-full max-w-4xl bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center shadow-2xl z-10">
+        
+        {/* LEFT PANEL */}
+        <div className="space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 text-xs font-semibold">
+            <span>✨ Enterprise Edition v1.0</span>
           </div>
-          <span className="lp-brand-name">IntelliMinutes</span>
+
+          <div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">IntelliMinutes</h1>
+            <p className="mt-2 text-slate-400 text-sm leading-relaxed">
+              Transform spoken meetings into structured intelligence using Whisper &amp; Groq Llama-3.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-slate-300 text-xs font-medium">Groq Llama-3 Powered AI Insights</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-slate-300 text-xs font-medium">Automated Action Items &amp; Task Extraction</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="text-slate-300 text-xs font-medium">Instant Professional PDF Export Suite</span>
+            </div>
+          </div>
+
+          {/* Metric Highlight Card */}
+          <div className="flex items-center gap-3 p-3.5 bg-slate-800/40 border border-white/10 rounded-xl backdrop-blur-md">
+            <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400 text-xs font-bold">⚡</div>
+            <div>
+              <div className="text-xs font-bold text-white">10x Faster Sprint Summaries</div>
+              <div className="text-[10px] text-slate-400">High-precision MOM generation</div>
+            </div>
+          </div>
         </div>
 
-        <div className="lp-card">
-          <h2 className="lp-heading">Welcome back</h2>
-          <p className="lp-subtext">Login to continue</p>
+        {/* RIGHT PANEL: Pure Form Auth */}
+        <div className="bg-slate-800/60 backdrop-blur-2xl border border-white/10 rounded-xl p-6 sm:p-8 shadow-xl">
+          <h2 className="text-xl font-bold text-white">Welcome back</h2>
+          <p className="text-xs text-slate-400 mt-1 mb-6">Please enter your credentials to continue</p>
 
-          {error && <div className="lp-error">{error}</div>}
+          {error && (
+            <div className="mb-4 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+              {error}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} className="lp-form">
-            <div className="lp-input-wrap">
-              <Mail className="lp-input-icon" size={16} />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Email Address
+              </label>
               <input
                 type="email"
-                placeholder="Email"
-                className="lp-input"
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="vaibhav@example.com"
+                className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
-            <div className="lp-input-wrap">
-              <Lock className="lp-input-icon" size={16} />
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Password
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                className="lp-input"
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••••••"
+                className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  color: "#94a3b8",
-                }}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
             </div>
 
-            <button className="lp-btn" disabled={loading}>
-              {loading ? <Loader className="animate-spin" size={16} /> : "Sign In"}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all shadow-lg shadow-indigo-600/25 active:scale-[0.98]"
+            >
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
-          <div className="lp-footer">
-            <p>
-              Don’t have an account? <Link to="/register">Register</Link>
-            </p>
-          </div>
+          <p className="text-xs text-center text-slate-400 mt-8">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-indigo-400 font-semibold hover:underline">
+              Create account
+            </Link>
+          </p>
         </div>
+
       </div>
     </div>
   );
-}
+};
+
+export default Login;
