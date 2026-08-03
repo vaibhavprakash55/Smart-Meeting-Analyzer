@@ -22,13 +22,62 @@ function HomePage() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const navigate = useNavigate();
 
+  // User-specific localStorage key helper
+  const getStorageKey = (currentUser) => {
+    if (currentUser?.email) {
+      return `meeting_history_${currentUser.email}`;
+    }
+    return "meeting_history_guest";
+  };
+
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
 
-    // Load meeting history from LocalStorage
-    const savedHistory = JSON.parse(localStorage.getItem("meeting_history") || "[]");
-    setHistory(savedHistory);
+    const fetchHistory = async () => {
+      const storageKey = getStorageKey(currentUser);
+
+      try {
+        // 1. Try fetching from Backend API first
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/history`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.history)) {
+          // Format DB items for frontend rendering
+          const formatted = data.history.map((item) => ({
+            id: item.id,
+            timestamp: item.createdAt
+              ? new Date(item.createdAt).toLocaleString()
+              : "Past Session",
+            data: {
+              transcript: item.transcript,
+              summary: item.summary,
+            },
+          }));
+          setHistory(formatted);
+          localStorage.setItem(storageKey, JSON.stringify(formatted));
+          return;
+        }
+      } catch (err) {
+        console.warn("Backend fetch failed, fallback to local storage", err);
+      }
+
+      // 2. Fallback: User-Isolated LocalStorage
+      const savedHistory = JSON.parse(
+        localStorage.getItem(storageKey) || "[]"
+      );
+      setHistory(savedHistory);
+    };
+
+    fetchHistory();
   }, []);
 
   const handleNewResult = (data) => {
@@ -40,11 +89,17 @@ function HomePage() {
     };
     const updatedHistory = [newEntry, ...history];
     setHistory(updatedHistory);
-    localStorage.setItem("meeting_history", JSON.stringify(updatedHistory));
+
+    // Save only to current logged in user's key
+    const currentUser = authService.getCurrentUser();
+    const storageKey = getStorageKey(currentUser);
+    localStorage.setItem(storageKey, JSON.stringify(updatedHistory));
   };
 
   const handleLogout = () => {
     authService.logout();
+    setHistory([]);
+    setResult(null);
     navigate("/login");
   };
 
@@ -76,7 +131,7 @@ function HomePage() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg text-sm transition"
+            className="flex items-center gap-2 px-4 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg text-sm transition cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout
@@ -133,7 +188,7 @@ function HomePage() {
                         {item.timestamp}
                       </p>
                       <p className="text-xs text-slate-300 mt-1 line-clamp-2">
-                        {item.data.transcript || "Audio Session"}
+                        {item.data?.transcript || "Audio Session"}
                       </p>
                     </div>
                   ))
@@ -147,7 +202,7 @@ function HomePage() {
       <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 flex flex-col items-center">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center mb-12"
         >
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
