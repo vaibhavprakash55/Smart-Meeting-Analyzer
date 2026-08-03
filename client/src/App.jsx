@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import Recorder from "./components/Recorder";
 import Result from "./components/Result";
@@ -18,6 +19,7 @@ import { LogOut } from "lucide-react";
 function HomePage() {
   const [result, setResult] = useState(null);
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
@@ -26,7 +28,7 @@ function HomePage() {
 
   const handleLogout = () => {
     authService.logout();
-    window.location.href = "/login";
+    navigate("/login");
   };
 
   return (
