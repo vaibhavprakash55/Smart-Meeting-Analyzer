@@ -6,23 +6,57 @@ export default function Result({ data }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(data.summary || data.insights || '');
+    const textToCopy = data.summary || data.insights || '';
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadPDF = () => {
-    const element = document.getElementById('summary-content');
-    import('html2pdf.js').then((html2pdf) => {
-      const opt = {
-        margin:       0.5,
-        filename:     `Meeting_Summary_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-      html2pdf.default().set(opt).from(element).save();
-    });
+    const content = data.summary || data.insights || 'No summary content';
+    const rawTranscript = data.transcript || 'No transcript available';
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Meeting Summary - IntelliMinutes</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; background: #ffffff; }
+            h1 { color: #4f46e5; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; font-size: 24px; margin-bottom: 8px; }
+            .meta { color: #64748b; font-size: 13px; margin-bottom: 24px; }
+            .section { margin-bottom: 28px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+            .section-title { font-size: 14px; font-weight: bold; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+            .content { line-height: 1.6; font-size: 14px; color: #334155; white-space: pre-wrap; }
+          </style>
+        </head>
+        <body>
+          <h1>IntelliMinutes - Meeting Summary Report</h1>
+          <div class="meta">Generated on: ${new Date().toLocaleString()}</div>
+          
+          <div class="section">
+            <div class="section-title">AI Summary & Insights</div>
+            <div class="content">${content}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Raw Transcript</div>
+            <div class="content">"${rawTranscript}"</div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() { window.close(); };
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -50,7 +84,7 @@ export default function Result({ data }) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopy}
-              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-lg text-xs flex items-center gap-1.5 transition"
+              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer"
               title="Copy Summary"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -58,7 +92,7 @@ export default function Result({ data }) {
             </button>
             <button
               onClick={handleDownloadPDF}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs flex items-center gap-1.5 font-medium transition shadow-lg shadow-indigo-600/20"
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs flex items-center gap-1.5 font-medium transition shadow-lg shadow-indigo-600/20 cursor-pointer"
               title="Export as PDF"
             >
               <Download className="w-3.5 h-3.5" />
