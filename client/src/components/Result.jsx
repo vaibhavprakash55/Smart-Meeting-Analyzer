@@ -1,22 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Copy, Download, FileText, Sparkles, Check, Activity, ListChecks, MessageSquare, Cpu } from 'lucide-react';
+import { authService } from '../services/api';
 
 export default function Result({ data }) {
   const [copied, setCopied] = useState(false);
 
-  const wordCount = data.transcript ? data.transcript.trim().split(/\s+/).filter(Boolean).length : 0;
+  // Local Storage isolated per logged in user
+  useEffect(() => {
+    if (data && (data.transcript || data.summary)) {
+      const currentUser = authService.getCurrentUser();
+      const storageKey = currentUser?.email ? `history_${currentUser.email}` : "history_guest";
+
+      const existingHistory = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const isDuplicate = existingHistory.some(item => item.transcript === data.transcript);
+
+      if (!isDuplicate) {
+        const updated = [{ ...data, createdAt: new Date().toISOString() }, ...existingHistory];
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      }
+    }
+  }, [data]);
+
+  const wordCount = data?.transcript ? data.transcript.trim().split(/\s+/).filter(Boolean).length : 0;
 
   const handleCopy = () => {
-    const textToCopy = data.summary || data.insights || '';
+    const textToCopy = data?.summary || data?.insights || '';
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadPDF = () => {
-    const content = data.summary || data.insights || 'No summary content';
-    const rawTranscript = data.transcript || 'No transcript available';
+    const content = data?.summary || data?.insights || 'No summary content';
+    const rawTranscript = data?.transcript || 'No transcript available';
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -79,7 +96,7 @@ export default function Result({ data }) {
             <ListChecks className="w-4 h-4 text-emerald-400" />
           </div>
           <span className="text-2xl font-bold text-emerald-400 mt-2">
-            {(data.summary || "").toLowerCase().includes("action item") ? "Extracted" : "None"}
+            {(data?.summary || "").toLowerCase().includes("action item") ? "Extracted" : "None"}
           </span>
         </div>
 
@@ -112,7 +129,7 @@ export default function Result({ data }) {
             Raw Transcript
           </div>
           <div className="bg-white/[0.03] border border-white/5 p-6 rounded-2xl h-[400px] overflow-y-auto text-slate-400 leading-relaxed italic">
-            "{data.transcript || "No transcript generated."}"
+            "{data?.transcript || "No transcript generated."}"
           </div>
         </div>
 
@@ -152,7 +169,7 @@ export default function Result({ data }) {
           >
             <div className="prose prose-invert max-w-none text-slate-200 text-base leading-relaxed">
               <ReactMarkdown>
-                {data.summary || data.insights || "No summary available."}
+                {data?.summary || data?.insights || "No summary available."}
               </ReactMarkdown>
             </div>
           </div>
